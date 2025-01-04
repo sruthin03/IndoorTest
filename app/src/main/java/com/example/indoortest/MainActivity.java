@@ -34,25 +34,19 @@ public class MainActivity extends AppCompatActivity {
     private ScanCallback scanCallback;
     private TextView tvBleData;
     private Button btnScan;
-
     private static final int PERMISSION_REQUEST_CODE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-
         tvBleData = findViewById(R.id.tvBleData);
         btnScan = findViewById(R.id.btnScan);
         Button btnClear = findViewById(R.id.btnClear);
         btnClear.setOnClickListener(v -> clearTextView());
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkAndRequestPermissions();
         }
-
-
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
 
@@ -64,14 +58,9 @@ public class MainActivity extends AppCompatActivity {
         bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
         setupScanCallback();
 
-
         webSocketManager = new WebSocketManager(tvBleData);
-        webSocketManager.connectWebSocket("ws://192.168.1.4:8000/ws/nav/"); // Use your Django server's IP address
-
-
+        webSocketManager.connectWebSocket("ws://192.168.1.4:8000/ws/nav/");
         btnScan.setOnClickListener(v -> startBLEScan());
-
-
     }
 
     private void checkAndRequestPermissions() {
@@ -99,10 +88,7 @@ public class MainActivity extends AppCompatActivity {
             Log.d("Permission", "All permissions granted");
         }
     }
-
-
     private final List<Integer> rssiList = new ArrayList<>();
-
     private void setupScanCallback() {
         scanCallback = new ScanCallback() {
             @Override
@@ -110,7 +96,6 @@ public class MainActivity extends AppCompatActivity {
                 super.onScanResult(callbackType, result);
                 BluetoothDevice device = result.getDevice();
                 int rssi = result.getRssi();
-
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                     Log.e("Permission", "BLUETOOTH_CONNECT permission not granted");
@@ -120,24 +105,17 @@ public class MainActivity extends AppCompatActivity {
                 String deviceName = device.getName();
                 String deviceAddress = device.getAddress();
                 if ("INS".equals(deviceName)) {
-
                     rssiList.add(rssi);
-
-
                     if (rssiList.size() >= 10) {
                         try {
 
                             JSONArray rssiJsonArray = new JSONArray(rssiList);
                             JSONObject jsonObject = new JSONObject();
-                            //jsonObject.put("deviceName", deviceName != null ? deviceName : "Unknown");
-                            //jsonObject.put("deviceAddress", deviceAddress);
                             jsonObject.put("rssi", rssiJsonArray);
                             String logMessage = jsonObject.toString();
                             Log.d("BLE Scan", logMessage);
                             updateTextView(logMessage);
                             webSocketManager.sendMessage(logMessage);
-
-
                             rssiList.clear();
                         } catch (Exception e) {
                             Log.e("BLE Scan", "Error creating JSON", e);
@@ -145,15 +123,12 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
-
             @Override
             public void onScanFailed(int errorCode) {
                 super.onScanFailed(errorCode);
                 String errorMessage = "Scan failed: " + errorCode;
                 Log.e("BLE Scan", errorMessage);
                 updateTextView(errorMessage);
-
-
                 webSocketManager.sendMessage(errorMessage);
             }
         };
@@ -163,8 +138,6 @@ public class MainActivity extends AppCompatActivity {
         if (bluetoothLeScanner != null) {
             bluetoothLeScanner.startScan(scanCallback);
             Log.d("BLE Scan", "Scan started");
-
-
             new Handler().postDelayed(() -> {
                 bluetoothLeScanner.stopScan(scanCallback);
                 Log.d("BLE Scan", "Scan stopped after 5 seconds");
